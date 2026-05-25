@@ -1,76 +1,199 @@
-# Confidence Taxonomy
+# ShieldScope Confidence Taxonomy
 
-ShieldScope uses a two-tier confidence classification applied per finding. This document defines what each tier means and how to use it.
+Version 1.0 · May 2026
 
 ---
 
-## The Two Tiers
+## What Confidence Measures
+
+Confidence in ShieldScope findings measures **evidentiary certainty**: how certain the platform is that a finding accurately reflects observable reality.
+
+Confidence does NOT measure:
+- Severity or impact
+- Exploitability
+- Business risk
+- Breach probability
+- Completeness of coverage
+
+These are separate dimensions. A finding can be OBSERVED (high certainty) and LOW severity. A finding can be INFERRED (lower certainty) and HIGH severity. Those combinations are valid and must be expressible without contradiction.
+
+The separation is intentional. Conflating confidence with severity produces tools that treat "uncertain high-risk" the same as "certain high-risk" — which causes both over-response and under-response in practice.
+
+---
+
+## The Five Tiers
 
 ### OBSERVED
 
-The indicator is structurally present in the artifact.
+**Definition:** The finding is directly visible in the retrieved data. The user can independently verify it from the displayed raw evidence without ShieldScope computation.
 
-OBSERVED means: the finding is based on something directly readable in the submitted content. The platform did not infer or extrapolate — it found the thing.
+**Characteristics:**
+- Deterministic and reproducible
+- No processing, expansion, counting, or interpretation required
+- The user sees exactly what ShieldScope sees
 
-Examples:
-- A PDF file contains an embedded JavaScript stream (`/JavaScript` object in the PDF structure)
-- An email header contains a `From:` domain that does not match the `Return-Path:` domain
-- A URL contains a homoglyph character (a Unicode lookalike substitution is present in the hostname)
-- A script contains a literal `eval(unescape(...))` call
+**Examples:**
+- HTTP header is absent from the response
+- DMARC policy is `p=none` (the value is in the record)
+- TLS certificate expiration date
+- Redirect destination URL
+- `eval(unescape(...))` appears in a script
+- File extension is `.exe`
 
-OBSERVED findings warrant direct action. If the indicator is present, it is present.
+**Exclusion:** If reaching the conclusion requires counting, parsing, normalizing, comparing, or expanding data, it is not OBSERVED — it is DERIVED.
+
+---
+
+### DERIVED
+
+**Definition:** The finding is calculated deterministically from observed data. The raw evidence is observed; the conclusion requires ShieldScope's processing to reach.
+
+**Reproducibility test:** The user could reproduce it, but would need to follow ShieldScope's computation — they cannot read the conclusion directly from the raw evidence.
+
+**Characteristics:**
+- Deterministic (same inputs always produce same output)
+- Requires computation, expansion, normalization, parsing, or structured comparison
+- High confidence, but conceptually distinct from direct observation
+
+**Examples:**
+- SPF DNS lookup count (requires tracing the include chain)
+- CSP directive weakness classification (requires parsing and evaluating the directive tree)
+- DMARC enforcement readiness (computed from policy + alignment + DKIM presence)
+- TLS version support classification (normalized from negotiated cipher suites)
+- File entropy score
+- ZIP uncompressed size ratio
+
+**Exclusion:** If the computation involves assumptions about behavior, intent, or incomplete data, it crosses into INFERRED.
 
 ---
 
 ### HEURISTIC
 
-The finding is inferred from a pattern that correlates with malicious behavior, but is not structurally confirmed.
+**Definition:** The finding is based on pattern matching against known indicators. The pattern correlates with the behavior — it does not confirm it.
 
-HEURISTIC means: the platform detected a pattern associated with the behavior, not the behavior itself. The correlation is meaningful; the confidence is bounded.
+**Characteristics:**
+- Pattern-based, not deterministic
+- False positives are expected and must be acknowledged per finding
+- Confidence bounded by pattern specificity and false positive rate
 
-Examples:
-- A filename contains a double extension (`.pdf.exe`) — consistent with masquerading, but double extensions exist in legitimate software packaging
-- A script uses heavily chained string operations — consistent with obfuscation, but also present in minified legitimate code
-- An email sender's display name contains a company name not matching the sending domain — consistent with spoofing, but also present in forwarded or alias mail
+**Distinction from INFERRED:** HEURISTIC uncertainty comes from pattern specificity — the pattern is real, but matches too broadly. INFERRED uncertainty comes from data completeness — the data is real, but the conclusion extends beyond what was verified.
 
-HEURISTIC findings warrant investigation, not immediate conclusion. The pattern is a signal. Context determines whether it is a threat.
+**Examples:**
+- Suspicious URL structure (homoglyph characters, misleading subdomain depth)
+- High script entropy consistent with obfuscation
+- Email sender display name inconsistent with sending domain
+- Double extension filename consistent with masquerading
+- Phishing-style anchor text mismatch
 
----
-
-## Why This Distinction Matters
-
-Without confidence labels, a finding list conflates two different types of claims:
-1. "This thing is present" — a structural fact
-2. "This pattern suggests a thing may be present" — an inference
-
-Conflating them causes two failure modes:
-- **Over-response:** Treating a heuristic pattern as confirmed leads to false positives being acted on as threats
-- **Under-response:** When analysts learn that some findings are uncertain, they sometimes discount the entire list — including OBSERVED findings that are certain
-
-The confidence label is per-finding so each item is interpreted correctly. An OBSERVED finding next to a HEURISTIC finding is not the same type of claim, and the label makes that explicit.
+**Required disclosure:** Every HEURISTIC finding must declare its false positive surface. "This pattern is also present in [legitimate context]" is part of the finding, not a footnote.
 
 ---
 
-## Confidence and Severity Are Independent
+### INFERRED
 
-A finding can be any combination:
+**Definition:** The finding is a contextual conclusion based on incomplete visibility. The evidence is real; the conclusion extends beyond what was directly verified.
 
-| Confidence | Severity | Example |
+**Characteristics:**
+- Evidence is real (observed or derived)
+- Conclusion requires an assumption about context, behavior, or scope not fully present in the retrieved data
+- Common in passive analysis where full system state is not observable
+
+**Examples:**
+- Probable infrastructure role from response header patterns
+- CDN attribution from IP range and certificate subject names
+- Delivery failure risk from SPF lookup count exceeding RFC limits (the count is DERIVED; the delivery behavior is INFERRED)
+- Exposure implication from open port combined with service banner
+- Behavioral interpretation from partial artifact structure
+
+---
+
+### INDETERMINATE
+
+**Definition:** ShieldScope retrieved data, but the evidence does not support a stable conclusion. Analysis ran and completed; the result is contradictory or unresolvable.
+
+**Distinction from retrieval failure:** INDETERMINATE means analysis produced ambiguous results. Retrieval failure (timeout, unreachable endpoint) is a scan state — no analysis occurred, so no confidence label applies.
+
+**Characteristics:**
+- Data was retrieved successfully
+- Multiple valid interpretations exist with no basis for preferring one
+- Publishing a finding with a directional confidence label would be misleading
+
+**Examples:**
+- Conflicting DNS answers from multiple resolvers
+- Malformed but partially parseable DNS record
+- CDN or shared certificate with multiple subject names that do not resolve the ownership question
+- Redirect chain inconsistency (A → B → A, or conflicting indicators at the destination)
+- Multiple SPF records present (RFC-violating; receiver behavior is undefined)
+
+**Usage rule:** INDETERMINATE findings should be published when the ambiguity itself is operationally significant — multiple SPF records is a misconfiguration worth surfacing regardless of whether a verdict can be reached. They should not be published when the ambiguity would only confuse without informing.
+
+---
+
+## Retrieval Failure States
+
+Retrieval failures are scan states, not confidence tiers. When no analysis occurs, no confidence label applies.
+
+| State | Meaning |
+|---|---|
+| `not_checked` | Check was not attempted (outside current scope, or conditionally skipped) |
+| `unreachable` | Target did not respond |
+| `timeout` | Response did not complete within the allowed window |
+| `unsupported` | Target type or format is not handled by this check |
+| `rate_limited` | Upstream source returned a rate limit response |
+| `blocked` | Request was refused by the target or an intermediary |
+
+These states appear in finding metadata. They do not produce a confidence label, a severity, or a score contribution.
+
+---
+
+## Multi-Layer Confidence
+
+Some findings involve multiple reasoning steps, each with its own confidence tier.
+
+**Weakest-link rule:** The headline confidence is the weakest tier in the chain. Not an average. The weakest necessary reasoning step governs what the user sees as the primary confidence signal.
+
+**Audit trail:** The card shows both the headline confidence and the reasoning chain so the user can see where uncertainty was introduced.
+
+```
+Headline: INFERRED
+Chain:    OBSERVED → DERIVED → INFERRED
+```
+
+**Full example:**
+
+Finding: "SPF configuration may cause delivery failures for legitimate senders"
+
+| Step | What happened | Confidence |
 |---|---|---|
-| OBSERVED | HIGH | PDF with embedded launch action — structurally present, high risk |
-| OBSERVED | LOW | Executable file with a common extension — structural fact, low additional signal |
-| HEURISTIC | HIGH | Double-extension filename on what appears to be an executable — high-risk pattern, not confirmed |
-| HEURISTIC | LOW | Minor header anomaly in an email consistent with forwarding — low signal, benign explanation likely |
+| SPF record retrieval | Record is present and directly readable | OBSERVED |
+| Lookup count expansion | Count computed by tracing the include chain | DERIVED |
+| Delivery failure risk | Failure depends on receiver behavior, not fully in scope | INFERRED |
+| **Headline** | | **INFERRED** |
 
-Severity describes potential impact. Confidence describes how certain the platform is that the indicator exists. Both matter. Neither overrides the other.
+This approach prevents hiding the weakest step behind a stronger label while still showing the full reasoning path.
 
 ---
 
-## Scope of Application
+## What Confidence Is Not
 
-The OBSERVED / HEURISTIC taxonomy currently applies to:
-- /sandbox Email tab (per-finding)
-- /sandbox File tab (per-finding)
-- /sandbox Script tab (per-finding)
+| Not this | Use instead |
+|---|---|
+| A numeric certainty percentage | A tier describing evidence origin and verification model |
+| A proxy for severity | Severity is a separate, independent dimension |
+| A measure of exploitability | Not in scope for this taxonomy |
+| A color code | Color may accompany the label but does not replace it — textual semantics are primary |
+| A single scalar for multi-step findings | Use the multi-layer model with the weakest-link rule |
 
-It is being extended to all tools in subsequent releases. Tools currently without per-finding confidence labels declare their overall scope in [KNOWN-LIMITATIONS.md](../KNOWN-LIMITATIONS.md).
+---
+
+## Migration Note
+
+ShieldScope currently publishes findings with two confidence labels: OBSERVED and HEURISTIC (introduced May 2026 in the /sandbox Email and File tabs).
+
+This taxonomy supersedes that model.
+
+**Migration path:**
+- Existing OBSERVED findings: remain OBSERVED
+- Existing HEURISTIC findings: audit for reclassification — some may be INFERRED (contextual conclusions from partial visibility) rather than HEURISTIC (pattern matching against known indicators)
+- DERIVED, INFERRED, INDETERMINATE: new tiers, applied on first use per tool
+- Retrieval failure states: applied retroactively where applicable, replacing prior `unknown` usage where the distinction is meaningful
