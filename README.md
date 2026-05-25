@@ -39,6 +39,7 @@ Tools currently live at [shieldscope.app](https://shieldscope.app):
 - [KNOWN-LIMITATIONS.md](KNOWN-LIMITATIONS.md) — scope boundaries and known gaps
 - [docs/methodology.md](docs/methodology.md) — how analysis works
 - [docs/confidence-taxonomy.md](docs/confidence-taxonomy.md) — confidence classification model
+- [docs/confidence-application-matrix.md](docs/confidence-application-matrix.md) — per-tool confidence usage rules
 - [docs/scoring-philosophy.md](docs/scoring-philosophy.md) — scoring and risk band definitions
 
 ---
