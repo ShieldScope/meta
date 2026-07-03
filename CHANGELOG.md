@@ -6,6 +6,19 @@ Detection Methodology v1 · Started May 2026
 
 ---
 
+## July 2026 — Directory Submissions
+
+**Module:** Platform  
+**Type:** Growth · Discoverability
+
+Submitted ShieldScope to external security tool directories.
+
+**awesome-security (GitHub, 14.6k stars).** Pull request #631 submitted to [sbilly/awesome-security](https://github.com/sbilly/awesome-security/pull/631). Entry placed in the Web > Scanning / Pentesting section with a description covering all six live tools and the passive-analysis posture.
+
+**AlternativeTo.** Account created (cybersuhan). Submission pending — AlternativeTo requires a 7-day account age before new app entries are accepted. Return after July 10, 2026.
+
+---
+
 ## July 2026 — SEO & Structured Data
 
 **Module:** Platform  
