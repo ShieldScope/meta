@@ -2,7 +2,7 @@
 
 This document reflects current development priorities. It is not a commitment or release schedule — it signals direction.
 
-Last updated: May 2026
+Last updated: July 2026
 
 ---
 
@@ -23,50 +23,46 @@ Supporting pages live: /guide, /updates, /about, /security, /privacy, /terms, /c
 
 ---
 
-## Near-Term
+## Completed (July 2026)
 
-**Confidence taxonomy documentation**  
-Publish a formal definition of the OBSERVED vs. HEURISTIC confidence classification used across /sandbox and other tools. Currently signaled per-finding in the UI; this makes the model explicit and auditable.
-
-**Scoring philosophy documentation**  
-How risk scores are calculated: weight model, band definitions (CLEAN / NEUTRAL / LOW / MEDIUM / HIGH), rationale for thresholds.
-
-**Methodology page (/methodology)**  
-A dedicated page explaining the static-only analysis approach, what the tools can and cannot verify, and how to interpret findings correctly.
-
-**Finding card redesign**  
-Improve the visual hierarchy of finding output: clearer confidence signal placement, "why this matters" in context, better separation of verdict from detail.
+- ✅ Confidence taxonomy documentation — 5-tier model, published at github.com/ShieldScope/meta
+- ✅ Scoring philosophy documentation — posture degradation model, published at github.com/ShieldScope/meta
+- ✅ Methodology page — `/methodology` live, links to GitHub canonical docs
+- ✅ Finding card redesign — 4-zone layout (verdict / analysis / evidence / confidence note) across Script, Email, File tabs
+- ✅ Finding detail pages — `/sandbox/findings/{pdf-javascript, extension-mismatch, homoglyph-filename, vba-macro-stream}` live
+- ✅ Example library — 5 one-click examples above tab bar on /sandbox
+- ✅ Scan counter — trust bar item tracking total scans via SQLite, populated by `/api/stats`
 
 ---
 
-## Medium-Term
+## Near-Term
 
-**Finding detail pages**  
-Deep-linkable reference pages per finding type:
-- /sandbox/findings/pdf-javascript
-- /sandbox/findings/extension-mismatch
-- /sandbox/findings/homoglyph-filename
-- /sandbox/findings/vba-macro-stream
+**More finding detail pages**  
+Expand beyond the initial 4 file-inspection pages. Script and email tab findings are candidates:
+- /sandbox/findings/eval-obfuscation
+- /sandbox/findings/base64-payload
+- /sandbox/findings/spoofed-display-name
+- /sandbox/findings/missing-authentication
 
-Each page covers: what the finding is, why it matters, how to respond. Useful to practitioners investigating specific attack patterns.
+**Score calibration**  
+Heuristic findings can stack in edge cases to produce misleading scores. A calibration pass is needed before the CRITICAL risk band is considered.
 
-**Example library**  
-Curated safe samples users can load directly into sandbox tools: homoglyph filename, macro-enabled Office document, nested archive, deceptive PDF, spoofed email header, malicious anchor mismatch. Educational and interactive.
+**OOXML macro detection improvement**  
+Current `.docx`/`.xlsx` macro detection is extension-based only (V1). Full inspection of `vbaProject.bin` inside OOXML ZIP containers should be parity with OLE2 detection.
 
 **Trust signals**  
-- Public uptime status page
-- Scan activity counter (if instrumented)
-- Methodology version history (started at [/updates](https://shieldscope.app/updates))
+- Public uptime status page (pending UptimeRobot account)
+- Methodology version history on /updates
 
 ---
 
 ## Deferred / Under Consideration
 
-- CRITICAL risk band for /sandbox (withheld in V1 pending calibration)
-- Score calibration pass for heuristic stacking in edge cases
+- CRITICAL risk band for /sandbox (withheld pending score calibration)
 - Confidence label tooltips in the UI
 - Individual update deep-link pages (/updates/static-file-inspection, etc.)
 - Module card hierarchy on the homepage (most used, recommended)
+- /url enhancement: visual URL decomposition, redirect storytelling, tracking/privacy detection
 
 ---
 

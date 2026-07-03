@@ -6,6 +6,74 @@ Detection Methodology v1 · Started May 2026
 
 ---
 
+## July 2026 — Example Library
+
+**Module:** Sandbox  
+**Type:** Usability · Education
+
+Added a "Try an example" strip above the tab bar on /sandbox. Five one-click examples load pre-built sample artifacts and run the scan immediately — no file upload or copy-paste required.
+
+- **Script — Base64 Payload**: JavaScript dropper using `eval(atob(...))` obfuscation, a cookie exfiltration beacon, and an encoded C2 config fetch. Fires obfuscation chain, eval, and base64 detectors.
+- **File — Homoglyph Filename**: PDF loaded under the filename `rеsumе.pdf`, where both `е` characters are Cyrillic U+0435. Fires the homoglyph filename detector.
+- **File — PDF with JavaScript**: Minimal PDF containing `/JavaScript` and `/OpenAction` markers. Fires the PDF JavaScript execution detector.
+- **File — VBA Macro Document**: `.docm` file (OOXML ZIP) containing `word/vbaProject.bin` with valid OLE2 header. Fires the VBA macro stream detector.
+- **File — Extension Mismatch**: Windows PE executable (MZ magic bytes) with a `.pdf` extension. Fires the extension mismatch detector at HIGH severity.
+
+File examples are fetched from `/sandbox/examples/` and injected via the File API. No files leave the browser session; no data is stored.
+
+---
+
+## July 2026 — Scan Counter & Infrastructure
+
+**Module:** Platform  
+**Type:** Infrastructure · Transparency
+
+Three infrastructure changes shipped:
+
+**Scan counter.** A persistent scan counter now tracks total scans across all tools — /headers, /mail, /url, /exposure, and /sandbox (all endpoints). The current count appears as a fifth item in the trust bar on the homepage. Stored in a local SQLite database (`/var/www/shieldscope/data/stats.db`) via a thread-safe Python module (`backend/stats.py`). The counter is never tied to user identity or session data. Hidden when count is zero.
+
+**Cache-Control headers.** Nginx now sends `Cache-Control: no-cache, must-revalidate` on all responses. Previously, HTML pages could be served from browser caches after a deploy. This ensures the current version propagates without a hard refresh.
+
+**Content Security Policy update.** The `script-src` directive now allows `static.cloudflareinsights.com`, resolving a browser console error from the Cloudflare Web Analytics beacon. The scan counter script was moved from an inline `<script>` block to an external file (`/static/js/stats.js`) to comply with the existing `script-src 'self'` policy — no `unsafe-inline` was introduced.
+
+---
+
+## July 2026 — Deep-Linkable Finding Pages
+
+**Module:** Sandbox  
+**Type:** Documentation · SEO
+
+Added four standalone reference pages for /sandbox file inspection findings. Each page covers: what the finding is, how ShieldScope detects it, the confidence model applied, and how to respond.
+
+- `/sandbox/findings/pdf-javascript` — HIGH · HEURISTIC
+- `/sandbox/findings/extension-mismatch` — HIGH/MEDIUM/LOW (tiered by detected type)
+- `/sandbox/findings/homoglyph-filename` — HIGH · OBSERVED
+- `/sandbox/findings/vba-macro-stream` — MEDIUM/HIGH · OBSERVED
+
+All four added to `sitemap.xml` (priority 0.6, changefreq monthly).
+
+---
+
+## July 2026 — Finding Card Redesign
+
+**Module:** Sandbox  
+**Type:** Transparency · Accuracy
+
+Redesigned finding cards across the /sandbox Script, Email, and File tabs to make the analytical chain explicit.
+
+Each card now presents four distinct zones:
+
+- **Verdict** — severity badge and confidence tier shown together in the header, so risk level and analytical certainty are readable before any explanation
+- **Analysis** — the finding description: what was detected and why it matters
+- **Evidence** — the raw extracted artifact (matched string, structural indicator, or pattern) shown as a labeled code block, separate from the conclusion, so analysts can verify the basis of the finding directly
+- **Confidence note** — plain-language definition of the confidence tier, inline with every finding card
+
+The confidence tier label alone was not sufficient for an analyst to calibrate response. The inline note now declares what each tier means operationally: OBSERVED findings include "Directly visible in retrieved data. No inference required." HEURISTIC findings include "Pattern-based — false positives possible. Verify before acting."
+
+Two previously-defined confidence tiers are now surfaced in the UI: DERIVED (calculated deterministically from observed data) and INDETERMINATE (evidence retrieved, no stable conclusion possible). Both were part of the formal taxonomy but were not previously rendered in finding cards.
+
+---
+
 ## May 2026 — Static File Inspection
 
 **Module:** Sandbox  
