@@ -6,6 +6,23 @@ Detection Methodology v1 · Started May 2026
 
 ---
 
+## July 2026 — SEO & Structured Data
+
+**Module:** Platform  
+**Type:** SEO · Infrastructure
+
+Improved search discoverability across three tool pages.
+
+**Title and meta description rewrites.** /headers/, /mail/, and /url/ titles were rewritten to lead with the action query ("Free HTTP Security Headers Checker", "Free SPF, DKIM & DMARC Checker", "Free URL Safety Checker") and include key header names and use cases in both title and description. Previously the titles were generic product names with no keyword targeting.
+
+**Structured data added to /headers/ and /mail/.** Both pages now carry Schema.org `SoftwareApplication` and `FAQPage` JSON-LD blocks. /url/ already had `SoftwareApplication`; `FAQPage` was added.
+
+**FAQ sections added to /headers/, /mail/, and /url/.** Each page now includes a visible, collapsible FAQ section below the tool — five questions per page covering what the tool analyzes, what the key terms mean, and how it protects against specific attack classes. The content is indexed by search engines and eligible for FAQ rich snippets.
+
+**Malformed OG/Twitter tags fixed on /url/.** The original og:title and twitter:title attributes in /url/index.html were missing their closing quote and `ShieldScope` suffix — the og:description content was embedded inside og:title. This was corrected; all social preview tags across the three pages now have clean, keyword-targeted values.
+
+---
+
 ## July 2026 — Example Library
 
 **Module:** Sandbox  
